@@ -106,6 +106,8 @@ class BoardIconsIntegrate
 			$style .= '
 	#posting_icons .board_key {display:none}
 	#posting_icons {padding-bottom: 1em}';
+
+		return $style;
 	}
 
 	/**
