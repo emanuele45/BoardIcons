@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<!DOCTYPE package-info SYSTEM "http://www.elkarte.net/site/package-info">
+<package-info xmlns="http://www.elkarte.net/site/package-info" xmlns:elk="http://www.elkarte.net/">
+	<license><![CDATA[
+/**
+ * Board Icons
+ *
+ * @name      Board Icons
+ * @copyright Board Icons contributors
+ * @license   BSD http://opensource.org/licenses/BSD-3-Clause
+ *
+ * @version 0.0.1
+ *
+ */
+	]]></license>
+	<id>emanuele:BoardIcons</id>
+	<name>Board Icons</name>
+	<version>0.0.1</version>
+	<type>modification</type>
+	<install for="1.0 RC3 - 1.0.99">
+		<require-file name="BoardIcons.integrate.php" destination="SUBSDIR" />
+		<hook hook="integrate_action_messageindex_after" file="SUBSDIR/BoardIcons.integrate.php" function="BoardIconsIntegrate::action_messageindex_after" />
+		<hook hook="integrate_action_boardindex_after" file="SUBSDIR/BoardIcons.integrate.php" function="BoardIconsIntegrate::action_boardindex_after" />
+	</install>
+	<uninstall for="1.0 RC3 - 1.0.99">
+		<remove-file name="SUBSDIR/BoardIcons.integrate.php" />
+		<hook reverse="true" hook="integrate_action_messageindex_after" file="SUBSDIR/BoardIcons.integrate.php" function="BoardIconsIntegrate::action_messageindex_after" />
+		<hook reverse="true" hook="integrate_action_boardindex_after" file="SUBSDIR/BoardIcons.integrate.php" function="BoardIconsIntegrate::action_boardindex_after" />
+	</uninstall>
+</package-info>
