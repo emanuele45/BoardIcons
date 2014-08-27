@@ -195,6 +195,8 @@ class BoardIconsIntegrate
 	 * the function uses $context['categories'] (BoardIndex), otherwise the
 	 * specified index is used as $context[$index] (sub-boards in MessageIndex)
 	 *
+	 * @uses global $context
+	 *
 	 * @param string $index - an index for $context where to look in to for boards
 	 */
 	private static function getLoadedBoards($index = null)
@@ -248,9 +250,6 @@ class BoardIconsIntegrate
 	 */
 	private static function boardIconData($file_name = null)
 	{
-		global $settings;
-
-		$icon_name = '/boardicons/' . $file_name;
 		$return = array('on' => false, 'off' => false, 'on2' => false, 'redirect' => false);
 
 		if (self::$_available_files === null)
@@ -276,6 +275,8 @@ class BoardIconsIntegrate
 	 * as fallback.
 	 *
 	 * Sets the $_available_files property.
+	 *
+	 * @uses global $settings
 	 */
 	private static function loadFiles()
 	{
