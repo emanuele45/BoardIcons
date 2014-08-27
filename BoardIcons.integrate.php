@@ -15,8 +15,15 @@ class BoardIconsIntegrate
 {
 	/**
 	 * Holds the default icons (if any)
+	 * @var string[]
 	 */
 	private static $_default = null;
+
+	/**
+	 * All the files that look like a board icon
+	 * @var string[]
+	 */
+	private static $_available_files = null;
 
 	/**
 	 * Hook attached to integrate_action_boardindex_after
@@ -173,23 +180,61 @@ class BoardIconsIntegrate
 		$icon_name = '/boardicons/' . $file_name;
 		$return = array('on' => false, 'off' => false, 'on2' => false, 'redirect' => false);
 
+		if (self::$_available_files === null)
+			self::loadFiles();
+
 		foreach (array_keys($return) as $state)
 		{
-			$icon_test = '/images/' . $icon_name . '_' . $state . '.png';
+			$icon_test = $file_name . '_' . $state . '.png';
 
-			// First the current theme (sorry, no variants at the moment)
-			if (file_exists($settings['theme_dir'] . $icon_test))
-				$return[$state] = 'data:image/png;base64,' . base64_encode(file_get_contents($settings['theme_dir'] . $icon_test));
-
-			// The default theme (if different from the "current")
-			elseif ($settings['theme_dir'] !== $settings['default_theme_dir'] && file_exists($settings['default_theme_dir'] . $icon_test))
-				$return[$state] = 'data:image/png;base64,' . base64_encode(file_get_contents($settings['default_theme_dir'] . $icon_test));
+			if (isset(self::$_available_files[$icon_test]))
+				$return[$state] = 'data:image/png;base64,' . base64_encode(file_get_contents(self::$_available_files[$icon_test]));
 
 			// If we can't find the icon: default
 			else
 				$return[$state] = false;
 		}
 
-	return $return;
+		return $return;
+	}
+
+	/**
+	 * Looks for the image files in the custom theme and in the default
+	 * as fallback.
+	 *
+	 * Sets the $_available_files property.
+	 */
+	private static function loadFiles()
+	{
+		global $settings;
+
+		$def_files = array();
+		$cust_files = array();
+		if (file_exists($settings['theme_dir'] . '/images/boardicons/'))
+		{
+			$cust_files = self::readDir($settings['theme_dir'] . '/images/boardicons');
+		}
+		elseif ($settings['theme_dir'] !== $settings['default_theme_dir'] && file_exists($settings['default_theme_dir'] . '/images/boardicons/'))
+		{
+			$def_files = self::readDir($settings['theme_dir'] . '/images/boardicons');
+		}
+		self::$_available_files = array_merge($def_files, $cust_files);
+	}
+
+	/**
+	 * Reads a directory to find files that match with the schema:
+	 *  ^(\d+|default)_(on|off|on2|redirect)\.png$
+	 */
+	private static function readDir($dir)
+	{
+		$files = glob($dir . '/*.png');
+		$return = array();
+
+		foreach ($files as $file)
+		{
+			if (preg_match('~^(\d+|default)_(on|off|on2|redirect)\.png$~', basename($file)))
+				$return[basename($file)] = $file;
+		}
+		return $return;
 	}
 }
