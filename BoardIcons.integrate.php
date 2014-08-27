@@ -26,13 +26,22 @@ class BoardIconsIntegrate
 	private static $_available_files = null;
 
 	/**
+	 * Defines if the generated stylesheet is saved in the current or the default
+	 * theme directory
+	 * @var bool
+	 */
+	private static $_use_custom = true;
+
+	/**
 	 * Hook attached to integrate_action_boardindex_after
 	 */
 	public static function action_boardindex_after()
 	{
 		$boardids = self::getLoadedBoards();
 
-		self::setHeader($boardids);
+		$css = self::generateStyles($boardids);
+
+		self::setStyles($css);
 	}
 
 	/**
@@ -42,20 +51,54 @@ class BoardIconsIntegrate
 	{
 		$boardids = self::getLoadedBoards('boards');
 
-		self::setHeader($boardids);
+		$css = self::generateStyles($boardids);
+
+		self::setStyles($css);
 	}
 
 	/**
-	 * Does all the magic: from a set of board ids takes care of set html_headers
+	 * Takes care of setting html_headers or run the generation of the file
 	 * with the appropriate css
 	 *
-	 * @uses global $context
+	 * @uses global $context, $modSettings
+	 *
+	 * @param string $css - The styles
+	 * @param bool $force_header - If true the css is forced into the header
+	 *                             irrespective of the configuration - used if
+	 *                             the destination directory is not writable
+	 */
+	private static function setStyles($css, $force_header = false)
+	{
+		global $context, $modSettings;
+
+		if (!empty($css))
+		{
+			if ($force_header || empty($modSettings['boardicons_styles']) || $modSettings['boardicons_styles'] === 'header')
+				$context['html_headers'] .= '<style>' . $css . '</style>';
+			elseif ($modSettings['boardicons_styles'] === 'file')
+			{
+				$file = self::storeToFile($css);
+				// If we were not able to save the file, just use the header
+				// @todo: maybe an error in the log?
+				if ($file === false)
+					return self::setStyles($css, true);
+
+				loadCSSFile($file);
+			}
+		}
+	}
+
+	/**
+	 * Does all the magic: from a set of board ids takes care of generating
+	 * the appropriate css
+	 *
+	 * @uses global $user_info (groups for caching purposes)
 	 *
 	 * @param int[] $boardids - An array of board id
 	 */
-	private static function setHeader($boardids)
+	private static function generateStyles($boardids)
 	{
-		global $context, $user_info;
+		global $user_info;
 
 		$icons = self::getIcons($boardids);
 
@@ -66,10 +109,40 @@ class BoardIconsIntegrate
 			cache_put_data($cache_key, $css, 3600);
 		}
 
-		if (!empty($css))
+		return $css;
+	}
+
+	/**
+	 * Creates a file with the css inside it.
+	 * It can create the file in the default theme, or in the "current" one
+	 * depending on self::$_use_custom
+	 *
+	 * @uses global $settings
+	 *
+	 * @param string $css - The styles
+	 * @return string the name of the file
+	 */
+	private static function storeToFile($css)
+	{
+		global $settings;
+
+		if (self::$_use_custom)
 		{
-			$context['html_headers'] .= '<style>' . $css . '</style>';
+			$dir = $settings['theme_dir'] . '/css/';
 		}
+		else
+		{
+			$dir = $settings['default_theme_dir'] . '/css/';
+		}
+
+		$file_name = md5(time()) . '.css';
+
+		if (is_writable($dir))
+			file_put_contents($dir . $file_name, $css, LOCK_EX);
+		else
+			return false;
+
+		return $file_name;
 	}
 
 	/**
@@ -213,6 +286,7 @@ class BoardIconsIntegrate
 		if (file_exists($settings['theme_dir'] . '/images/boardicons/'))
 		{
 			$cust_files = self::readDir($settings['theme_dir'] . '/images/boardicons');
+			self::$_use_custom = true;
 		}
 		elseif ($settings['theme_dir'] !== $settings['default_theme_dir'] && file_exists($settings['default_theme_dir'] . '/images/boardicons/'))
 		{
