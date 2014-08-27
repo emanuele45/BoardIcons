@@ -58,7 +58,11 @@ class BoardIconsIntegrate
 			$css = self::buildCSS($icons);
 			cache_put_data($cache_key, $css, 3600);
 		}
-		$context['html_headers'] .= $css;
+
+		if (!empty($css))
+		{
+			$context['html_headers'] .= '<style>' . $css . '</style>';
+		}
 	}
 
 	/**
@@ -102,11 +106,6 @@ class BoardIconsIntegrate
 			$style .= '
 	#posting_icons .board_key {display:none}
 	#posting_icons {padding-bottom: 1em}';
-
-		if (!empty($style))
-		{
-			return '<style>' . $style . '</style>';
-		}
 	}
 
 	/**
